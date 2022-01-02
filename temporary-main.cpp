@@ -14,21 +14,25 @@ void clearMemory(uint8_t* mem, unsigned int size){
     }
 }
 
+void printHex(uint8_t binary){
+    char toHex[2]; 
+    toHex[0] = binary & 0x0F;
+    toHex[1] = (binary & 0xF0) >> 4;
+    for(unsigned int j = 0; j < 2; j++){
+        if(toHex[j] > 9){
+            toHex[j] += 0x37;
+        }else{
+            toHex[j] += 0x30;
+        }
+    }
+    std::cout << toHex[1] << toHex[0] << " ";
+}
+
 void readMemory(uint8_t* mem, unsigned int size){
     for(unsigned int i = 0; i < size; i++){
-        char toHex[2]; 
-        toHex[0] = mem[i] & 0x0F;
-        toHex[1] = (mem[i] & 0xF0) >> 4;
-        for(unsigned int j = 0; j < 2; j++){
-            if(toHex[j] > 9){
-                toHex[j] += 0x37;
-            }else{
-                toHex[j] += 0x30;
-            }
-        }
-        std::cout << toHex[1] << toHex[0] << " ";
+        printHex(mem[i]);
         if((i + 1) % 16 == 0){
-            std::cout << "\n";
+            std::cout << "\n";        
         }
     }
 }
@@ -41,14 +45,19 @@ int main(void){
     register uint8_t SR = 0;
     static uint8_t PC = 0; 
     static uint8_t IR = 0;
+    // Stack? SP & BP, PUSH, POP
 
     clearMemory(readonlymem, ROMSIZE);
     clearMemory(memory, RAMSIZE);
 
     // Hard coded instructions
-    readonlymem[0] = 0x01;
-    readonlymem[1] = 0xFF;
-    readonlymem[2] = 0x05;
+    const int nrOf = 5;
+    const uint8_t Instructions[] = {0x01, 0xFF, 0x04, 0xBB, 0x10 };  
+
+    // sizeof
+    for(int i = 0; i < nrOf; i++){
+        readonlymem[i] = Instructions[i];
+    }
 
     for(uint8_t i = 0; i < ROMSIZE; i++){
         IR = readonlymem[PC];
@@ -69,12 +78,20 @@ int main(void){
             memory[PC + 1] = registerA;
             PC += 2;
         break;
+        // LOAD B BY VALUE
         case 0x04:
+            registerB = readonlymem[PC + 1];
+            PC += 2;
+        break;
+        // LOAD B BY ADDRESS
+        case 0x05:
+            registerB = memory[PC + 1];
+            PC += 2;
+        break;
+        case 0x06:
+
 
         break;
-
-
-
         // HALT
         case 0x10:
             goto exit_;
@@ -85,17 +102,25 @@ int main(void){
         }
     }
     exit_: ;
-    std::cout << "Accumulator: " << +registerA << "\n";
-    std::cout << "B Register: " << +registerB << "\n";
-    std::cout << "PC: " << +PC << "\n";
-    std::cout << "IR: " << +IR << "\n";
+    std::cout << "Accumulator: ";
+    printHex(registerA);
+    std::cout << "\n";
+    std::cout << "B Register: ";
+    printHex(registerB);
+    std::cout << "\n";
+    std::cout << "PC: ";
+    printHex(PC);
+    std::cout << "\n";
+    std::cout << "IR: ";
+    printHex(IR);
+    std::cout << "\n";
 
     std::cout << "ROM: " << "\n";
     readMemory(readonlymem, ROMSIZE);
-
-    std::cout << "RAM: " << "\n";
-    readMemory(memory, RAMSIZE);
-
+    /*
+        std::cout << "RAM: " << "\n";
+        readMemory(memory, RAMSIZE);
+    */
     while(1);
 
     return 0;
